@@ -40,6 +40,8 @@ class HomeController extends Controller {
 
 		const { fileName, fileMd5, chunksTotal } = ctx.request.body;
 
+		if (!fs.existsSync(fileDist)) fs.mkdirSync(fileDist);
+
 		const filePath = path.join(fileDist, fileName);
 		// 创建存储文件
 		fs.writeFileSync(filePath, '');
