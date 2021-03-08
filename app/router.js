@@ -6,5 +6,6 @@
 module.exports = app => {
   const { router, controller } = app;
   router.get('/', controller.home.index);
-  router.post('/upload', controller.home.upload)
+  router.post('/file/upload', controller.home.upload)
+  router.post('/file/merge_chunk', controller.home.mergeChunks)
 };
