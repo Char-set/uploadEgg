@@ -5,6 +5,8 @@ const path = require('path')
 
 const fileDist = path.join('./', 'fileDist');
 
+const filePiecesDist = path.join('./','filePiecesDist')
+
 const Controller = require('egg').Controller;
 
 class HomeController extends Controller {
@@ -23,11 +25,13 @@ class HomeController extends Controller {
 		let realFile = fs.readFileSync(file.filepath);
 
 
-		const chunkPath = `uploadfile/${fileName}-${fileMd5}`;
+		const chunkPath = `${filePiecesDist}/${fileName}-${fileMd5}`;
+
+		if(!fs.existsSync(filePiecesDist)) fs.mkdirSync(filePiecesDist);
 
 		if (!fs.existsSync(chunkPath)) fs.mkdirSync(chunkPath);
 
-		fs.writeFileSync(path.join('./', `uploadfile/${fileName}-${fileMd5}/${fileName}-${fileMd5}-${chunkNth}`), realFile)
+		fs.writeFileSync(path.join('./', `${filePiecesDist}/${fileName}-${fileMd5}/${fileName}-${fileMd5}-${chunkNth}`), realFile)
 		// ctx.cleanupRequestFiles()
 
 
@@ -40,13 +44,30 @@ class HomeController extends Controller {
 
 		const { fileName, fileMd5, chunksTotal } = ctx.request.body;
 
-		if (!fs.existsSync(fileDist)) fs.mkdirSync(fileDist);
+		if (!fileName) {
+			ctx.helper.__errorHandle(`fileName is require`);
+			return;
+		}
 
-		const filePath = path.join(fileDist, fileName);
+		if (!fileMd5) {
+			ctx.helper.__errorHandle(`fileMd5 is require`);
+			return;
+		}
+
+		if (!chunksTotal) {
+			ctx.helper.__errorHandle(`chunksTotal is require`);
+			return;
+		}
+		if(!fs.existsSync(fileDist)) fs.mkdirSync(fileDist);
+
+		let tempPath = `${fileDist}/${fileMd5}`
+		if (!fs.existsSync(tempPath)) fs.mkdirSync(tempPath);
+
+		const filePath = path.join(tempPath, fileName);
 		// 创建存储文件
 		fs.writeFileSync(filePath, '');
 
-		const chunksPath = `uploadfile/${fileName}-${fileMd5}`;
+		const chunksPath = `${filePiecesDist}/${fileName}-${fileMd5}`;
 
 		// 获取暂存的所有chunk
 		const chunks = fs.readdirSync(chunksPath);
@@ -66,7 +87,63 @@ class HomeController extends Controller {
 
 		fs.rmdirSync(chunksPath);
 
-		ctx.body = ctx.helper.__newMsg(200, 'ok');
+		ctx.body = ctx.helper.__newMsg(200, 'ok', `/fileDist/${fileMd5}/${fileName}`);
+	}
+
+	async checkFile() {
+		const { ctx } = this;
+
+		const { fileMd5, filePieces, fileName } = ctx.request.body;
+
+		if(!fileMd5) {
+			ctx.helper.__errorHandle(`fileMd5 is require`);
+			return;
+		}
+
+		if(!filePieces) {
+			ctx.helper.__errorHandle(`filePieces is require`);
+			return;
+		}
+
+		if(!fileName) {
+			ctx.helper.__errorHandle(`fileName is require`);
+			return;
+		}
+
+		let filePath = `${fileDist}/${fileMd5}/${fileName}`;
+
+		// 文件已存在，秒传
+		if(fs.existsSync(filePath)) {
+			ctx.body = ctx.helper.__newMsg(200, 'ok', {status:'file exist', filePath});
+			return;
+		}
+
+		const chunksPath = `${filePiecesDist}/${fileName}-${fileMd5}`;
+
+		if (!fs.existsSync(chunksPath)) {
+			ctx.body = ctx.helper.__newMsg(200, 'ok', {status:'file not exist'});
+			return;
+		}
+
+		// 获取暂存的所有chunk
+		const chunks = fs.readdirSync(chunksPath);
+
+		console.log(chunks);
+
+		let leftPieces = (filePieces || []).filter((item,idx) => {
+			return chunks.indexOf(`${fileName}-${fileMd5}-${item.index}`) == -1
+		});
+
+		console.log('leftPieces:',leftPieces);
+
+		if(leftPieces.length > 0) {
+			ctx.body = ctx.helper.__newMsg(200, 'ok', {status:'file need continue upload',leftPieces});
+			return;
+		}
+
+
+		ctx.body = ctx.helper.__newMsg(200, 'ok', {status:'file not exist'});
+
 	}
 }
 
