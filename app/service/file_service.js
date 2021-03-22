@@ -12,15 +12,15 @@ const filePiecesDist = path.join('./','filePiecesDist')
 class File_serviceService extends Service {
     async uploadFile(file, fileName, fileMd5, chunkNth) {
 
-        // let realFile = fs.readFileSync(file.filepath);
+        let realFile = fs.readFileSync(file.filepath);
 
-		// const chunkPath = `${filePiecesDist}/${fileName}-${fileMd5}`;
+		const chunkPath = `${filePiecesDist}/${fileName}-${fileMd5}`;
 
-		// if(!fs.existsSync(filePiecesDist)) fs.mkdirSync(filePiecesDist);
+		if(!fs.existsSync(filePiecesDist)) fs.mkdirSync(filePiecesDist);
 
-		// if (!fs.existsSync(chunkPath)) fs.mkdirSync(chunkPath);
+		if (!fs.existsSync(chunkPath)) fs.mkdirSync(chunkPath);
 
-		// fs.writeFileSync(path.join('./', `${filePiecesDist}/${fileName}-${fileMd5}/${fileName}-${fileMd5}-${chunkNth}`), realFile);
+		fs.writeFileSync(path.join('./', `${filePiecesDist}/${fileName}-${fileMd5}/${fileName}-${fileMd5}-${chunkNth}`), realFile);
 
         return 'ok'
 
